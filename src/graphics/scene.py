@@ -27,6 +27,11 @@ class Scene:
         self.scene_bounds = None
         self.running = True
 
+        # Nastavení pro ovládání kamery
+        self.camera_speed = 0.5  # Rychlost pohybu kamery
+        self.zoom_speed = 1.0  # Rychlost zoomu
+        self.auto_camera = True  # Přepínač pro automatické sledování scény
+
     def create_rectangles_from_list(self, data_list):
         """Vytvoří sloupce obdélníků z dodaného seznamu slovníků."""
         self.rectangles = []
@@ -74,6 +79,9 @@ class Scene:
         glPushMatrix()
         glLoadIdentity()
 
+        # Aplikace transformací kamery
+        glTranslatef(self.camera.position[0], self.camera.position[1], self.camera.position[2])
+
         # Nastavení barvy pro centrální osu
         glColor3f(*CENTER_LINE_COLOR)
 
@@ -98,21 +106,53 @@ class Scene:
         self.camera.update(center, size)
 
     def handle_events(self):
-        """Zpracování událostí."""
+        """Zpracování událostí.
+        Returns:
+            bool: False pokud má aplikace skončit, jinak True
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.running = False
+                    return False
+                elif event.key == pygame.K_SPACE:
+                    # Přepínání mezi automatickým a manuálním ovládáním kamery
+                    self.auto_camera = not self.auto_camera
+                    print("Camera mode:", "Auto" if self.auto_camera else "Manual")
+
+        # Zpracování vstupů pro kameru
+        self.handle_camera_input()
+        return True
+
+    def handle_camera_input(self):
+        """Zpracování vstupu pro ovládání kamery"""
+        keys = pygame.key.get_pressed()
+
+        # Pohyb kamery pouze když není aktivní automatické sledování
+        if not self.auto_camera:
+            if keys[pygame.K_a]:  # Vlevo
+                self.camera.position[0] -= self.camera_speed
+            if keys[pygame.K_d]:  # Vpravo
+                self.camera.position[0] += self.camera_speed
+            if keys[pygame.K_w]:  # Přiblížení
+                self.camera.position[2] += self.zoom_speed
+            if keys[pygame.K_s]:  # Oddálení
+                self.camera.position[2] -= self.zoom_speed
 
     def update(self):
         """Aktualizace scény."""
-        self.update_camera()
+        # Automatická aktualizace kamery pouze když je aktivní
+        if self.auto_camera:
+            self.update_camera()
 
     def draw(self):
         """Vykreslení scény."""
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # Aplikace transformací kamery
+        glLoadIdentity()
+        glTranslatef(self.camera.position[0], self.camera.position[1], self.camera.position[2])
 
         # Vykreslení středové osy
         self.draw_center_line()

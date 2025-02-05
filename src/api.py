@@ -1,8 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List, Optional
-from datetime import datetime
-import asyncio
 import uvicorn
 from threading import Thread
 
@@ -27,11 +25,18 @@ class ApiServer:
         async def add_data(data_update: DataUpdate):
             """Přidá nový objekt do rect_objects"""
             try:
+                # Přidání nových dat do seznamu
                 self.rect_objects.append(data_update.data)
+
                 if self.on_update_callback:
-                    # Spustíme callback pro aktualizaci vizualizace
+                    # Zavolání callback funkce s aktualizovaným seznamem
                     self.on_update_callback(self.rect_objects)
-                return {"status": "success", "message": "Data byla úspěšně přidána"}
+
+                return {
+                    "status": "success",
+                    "message": "Data byla úspěšně přidána",
+                    "total_objects": len(self.rect_objects)
+                }
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
 

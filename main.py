@@ -45,6 +45,16 @@ class Application:
         """Callback pro aktualizaci dat z API"""
         self.update_queue.put(new_data)
 
+    def process_updates(self):
+        """Zpracuje všechny čekající aktualizace"""
+        try:
+            while True:  # Zkontrolujeme všechny aktualizace ve frontě
+                new_data = self.update_queue.get_nowait()
+                self.rect_objects = new_data
+                self.scene.create_rectangles_from_list(new_data)
+        except queue.Empty:
+            pass  # Žádné další aktualizace nejsou k dispozici
+
     def run(self):
         # Spuštění API serveru
         self.api_server.run_server()
@@ -57,24 +67,13 @@ class Application:
         running = True
 
         while running:
-            # Zpracování událostí Pygame
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        running = False
+            # Zpracování událostí
+            running = self.scene.handle_events()  # Vrací False pokud má aplikace skončit
 
-            # Kontrola nových dat
-            try:
-                while True:  # Zpracujeme všechny aktualizace ve frontě
-                    new_data = self.update_queue.get_nowait()
-                    self.rect_objects = new_data
-                    self.scene.create_rectangles_from_list(new_data)
-            except queue.Empty:
-                pass  # Žádná nová data k dispozici
+            # Zpracování čekajících aktualizací
+            self.process_updates()
 
-            # Aktualizace a vykreslení scény
+            # Update a vykreslení scény
             self.scene.update()
             self.scene.draw()
 
