@@ -1,0 +1,10 @@
+PyOpenGL
+PyOpenGL_accelerate
+numpy
+pygame
+fastapi
+pydantic
+typing
+uvicorn
+requests
+
